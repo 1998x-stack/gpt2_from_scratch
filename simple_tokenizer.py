@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 手写字节级BPE Tokenizer （教学演示 / educational demo）
 
@@ -18,9 +17,8 @@
 作者注：本实现参考了GPT-2/GPT-4的字节级BPE设计
 """
 
-from typing import Dict, List, Tuple, Optional
-from collections import defaultdict
 import re
+from collections import defaultdict
 
 
 class SimpleBPETokenizer:
@@ -49,14 +47,14 @@ class SimpleBPETokenizer:
         
         # 词表：token_id -> bytes
         # 初始化为256个基础字节 (0x00 - 0xFF)
-        self.vocab: Dict[int, bytes] = {i: bytes([i]) for i in range(256)}
+        self.vocab: dict[int, bytes] = {i: bytes([i]) for i in range(256)}
         
         # 合并规则：(byte1, byte2) -> merged_token_id
         # 这个顺序很重要！编码时必须按训练时的顺序应用合并
-        self.merges: Dict[Tuple[int, int], int] = {}
+        self.merges: dict[tuple[int, int], int] = {}
         
         # 特殊token（可扩展）
-        self.special_tokens: Dict[str, int] = {}
+        self.special_tokens: dict[str, int] = {}
         
         # 用于分词的正则表达式（类似GPT-2的预分词）
         # 这个正则把文本切成更小的块，避免跨词合并
@@ -104,7 +102,7 @@ class SimpleBPETokenizer:
     
     # ==================== BPE 训练 ====================
     
-    def _get_stats(self, token_ids_list: List[List[int]]) -> Dict[Tuple[int, int], int]:
+    def _get_stats(self, token_ids_list: list[list[int]]) -> dict[tuple[int, int], int]:
         """
         统计所有相邻token对的出现频率
         
@@ -123,7 +121,7 @@ class SimpleBPETokenizer:
                 stats[pair] += 1
         return stats
     
-    def _merge(self, token_ids: List[int], pair: Tuple[int, int], new_id: int) -> List[int]:
+    def _merge(self, token_ids: list[int], pair: tuple[int, int], new_id: int) -> list[int]:
         """
         在token序列中执行一次合并操作
         
@@ -151,7 +149,7 @@ class SimpleBPETokenizer:
                 i += 1
         return new_tokens
     
-    def train(self, texts: List[str], verbose: bool = True) -> None:
+    def train(self, texts: list[str], verbose: bool = True) -> None:
         """
         在给定文本上训练BPE模型
         
@@ -172,7 +170,7 @@ class SimpleBPETokenizer:
         
         # Step 1: 预分词 + 转换为字节序列
         # 预分词的作用：避免跨词边界的合并（如 "dog" + " cat" 不应合并）
-        token_ids_list: List[List[int]] = []
+        token_ids_list: list[list[int]] = []
         
         for text in texts:
             # 使用正则预分词
@@ -218,7 +216,7 @@ class SimpleBPETokenizer:
                 # 尝试解码以显示合并的是什么
                 try:
                     decoded = self.vocab[new_id].decode('utf-8', errors='replace')
-                except:
+                except Exception:  # noqa: BLE001 - fall back to raw bytes for any decode error
                     decoded = repr(self.vocab[new_id])
                 print(f"合并 #{i+1}: {best_pair} -> {new_id} "
                       f"(出现{best_count}次) = '{decoded}'")
@@ -231,7 +229,7 @@ class SimpleBPETokenizer:
     
     # ==================== 编码（文本 -> Token IDs） ====================
     
-    def encode(self, text: str, verbose: bool = False) -> List[int]:
+    def encode(self, text: str, verbose: bool = False) -> list[int]:
         """
         将文本编码为token id序列
         
@@ -277,7 +275,7 @@ class SimpleBPETokenizer:
     
     # ==================== 解码（Token IDs -> 文本） ====================
     
-    def decode(self, token_ids: List[int]) -> str:
+    def decode(self, token_ids: list[int]) -> str:
         """
         将token id序列解码为文本
         
@@ -302,7 +300,7 @@ class SimpleBPETokenizer:
         # UTF-8解码（errors='replace'处理无效序列）
         return all_bytes.decode('utf-8', errors='replace')
     
-    def decode_tokens(self, token_ids: List[int]) -> List[str]:
+    def decode_tokens(self, token_ids: list[int]) -> list[str]:
         """
         将每个token单独解码，用于调试
         
@@ -344,7 +342,7 @@ class SimpleBPETokenizer:
         print(f"字符数: {len(text)}")
         print(f"Token/字符比: {len(token_ids)/len(text):.2f}")
         
-        print(f"\nToken详情:")
+        print("\nToken详情:")
         for i, (id, token) in enumerate(zip(token_ids, decoded_tokens)):
             # 显示原始bytes
             token_bytes = self.vocab.get(id, b'')
@@ -355,9 +353,9 @@ class SimpleBPETokenizer:
         if decoded == text:
             print("\n✓ 编解码验证通过")
         else:
-            print(f"\n✗ 编解码不匹配!")
-            print(f"  原文: {repr(text)}")
-            print(f"  解码: {repr(decoded)}")
+            print("\n✗ 编解码不匹配!")
+            print(f"  原文: {text!r}")
+            print(f"  解码: {decoded!r}")
 
 
 # ==================== 特殊情况演示 ====================
@@ -402,7 +400,7 @@ def demonstrate_tokenization_issues():
     print("-"*40)
     texts = ["hello", " hello", "  hello", "hello\n", "hello\t"]
     for t in texts:
-        print(f"  {repr(t):15s} -> bytes: {list(t.encode('utf-8'))}")
+        print(f"  {t!r:15s} -> bytes: {list(t.encode('utf-8'))}")
     print("  结论: 前导空格、多个空格、换行符都是独立token，影响模型理解")
     
     # 问题4: 数字的切分
