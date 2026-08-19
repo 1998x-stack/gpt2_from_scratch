@@ -1,0 +1,7 @@
+torch>=2.0
+numpy
+tensorboard
+
+# Optional tokenizers (install at least one for GPT-2 tokenizer support)
+# tiktoken
+# transformers
