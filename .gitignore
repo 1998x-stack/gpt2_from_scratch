@@ -30,3 +30,6 @@ runs*/
 *.log
 # Superpowers scratch
 .superpowers/
+
+# Local corpus data
+sample_corpus.txt
