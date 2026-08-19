@@ -29,3 +29,5 @@ runs/
 *.pkl
 *.pt
 *.log
+# Superpowers scratch
+.superpowers/
