@@ -6,6 +6,7 @@ train.bin / val.bin / tokenizer.pkl under ./data/grimms_bpe.
 import os
 
 import numpy as np
+
 from tokenizer import SimpleBPETokenizer
 
 VOCAB_SIZE = 1024
@@ -14,7 +15,8 @@ SRC = 'sample_corpus.txt'
 
 
 def main() -> None:
-    text = open(SRC, encoding='utf-8').read()
+    with open(SRC, encoding='utf-8') as f:
+        text = f.read()
     split = int(len(text) * 0.9)
     train_text, val_text = text[:split], text[split:]
 
