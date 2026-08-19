@@ -2,15 +2,19 @@
 GPT-2 Model Architecture
 参考nanoGPT的简洁实现
 """
+from __future__ import annotations
+
 import math
+
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
 
 class LayerNorm(nn.Module):
-    """LayerNorm with optional bias"""
-    def __init__(self, ndim, bias):
+    """LayerNorm with optional bias (nanoGPT style)."""
+
+    def __init__(self, ndim: int, bias: bool):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(ndim))
         self.bias = nn.Parameter(torch.zeros(ndim)) if bias else None
@@ -20,8 +24,9 @@ class LayerNorm(nn.Module):
 
 
 class CausalSelfAttention(nn.Module):
-    """Multi-head causal self-attention"""
-    def __init__(self, config):
+    """Multi-head causal self-attention."""
+
+    def __init__(self, config) -> None:
         super().__init__()
         assert config.n_embd % config.n_head == 0
         
@@ -64,8 +69,9 @@ class CausalSelfAttention(nn.Module):
 
 
 class MLP(nn.Module):
-    """Feed-forward network"""
-    def __init__(self, config):
+    """Feed-forward block: Linear -> GELU -> Linear -> Dropout."""
+
+    def __init__(self, config) -> None:
         super().__init__()
         self.c_fc = nn.Linear(config.n_embd, 4 * config.n_embd, bias=config.bias)
         self.gelu = nn.GELU()
@@ -81,8 +87,9 @@ class MLP(nn.Module):
 
 
 class Block(nn.Module):
-    """Transformer block"""
-    def __init__(self, config):
+    """Transformer block: pre-norm attention + pre-norm MLP with residuals."""
+
+    def __init__(self, config) -> None:
         super().__init__()
         self.ln_1 = LayerNorm(config.n_embd, bias=config.bias)
         self.attn = CausalSelfAttention(config)
@@ -96,8 +103,15 @@ class Block(nn.Module):
 
 
 class GPT2(nn.Module):
-    """GPT-2 Language Model"""
-    def __init__(self, config):
+    """GPT-2 language model.
+
+    Implements the standard decoder-only Transformer used by the GPT-2 family
+    (token + position embeddings, stacked Transformer Blocks, a final LayerNorm
+    and a tied lm_head).
+    这是一个从零实现的 GPT-2，用于学习 Transformer 语言模型的内部结构。
+    """
+
+    def __init__(self, config) -> None:
         super().__init__()
         self.config = config
         
@@ -128,7 +142,13 @@ class GPT2(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, idx, targets=None):
+    def forward(self, idx, targets=None) -> tuple[torch.Tensor, torch.Tensor | None]:
+        """Forward pass.
+
+        When ``targets`` is provided, returns ``(logits, loss)`` over all
+        positions. Otherwise returns logits for the final token only with
+        ``loss=None`` (used for inference).
+        """
         device = idx.device
         b, t = idx.size()
         assert t <= self.config.block_size, f"Cannot forward sequence of length {t}, block size is {self.config.block_size}"
@@ -155,16 +175,20 @@ class GPT2(nn.Module):
         
         return logits, loss
 
-    def get_num_params(self, non_embedding=True):
-        """Return the number of parameters in the model"""
+    def get_num_params(self, non_embedding: bool = True) -> int:
+        """Return the number of parameters in the model.
+
+        When ``non_embedding`` is True, subtracts the positional-embedding
+        parameters so the count reflects "non-embedding" (transformer) params.
+        """
         n_params = sum(p.numel() for p in self.parameters())
         if non_embedding:
             n_params -= self.transformer.wpe.weight.numel()
         return n_params
 
     @torch.no_grad()
-    def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None):
-        """Generate new tokens"""
+    def generate(self, idx, max_new_tokens: int, temperature: float = 1.0, top_k: int | None = None):
+        """Generate ``max_new_tokens`` tokens autoregressively from ``idx``."""
         for _ in range(max_new_tokens):
             # Crop context if needed
             idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
@@ -184,8 +208,13 @@ class GPT2(nn.Module):
         
         return idx
 
-    def configure_optimizers(self, weight_decay, learning_rate, betas, device_type):
-        """Configure optimizer with weight decay"""
+    def configure_optimizers(self, weight_decay: float, learning_rate: float, betas, device_type: str):
+        """Configure an AdamW optimizer with selective weight decay.
+
+        Biases, LayerNorm weights and Embedding weights are excluded from
+        weight decay; Linear weights receive it. Uses a fused implementation
+        on CUDA when available.
+        """
         # Separate parameters that should and shouldn't have weight decay
         decay = set()
         no_decay = set()
