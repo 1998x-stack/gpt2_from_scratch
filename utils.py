@@ -154,11 +154,27 @@ def print_training_info(config, model, train_tokens: int, val_tokens: int) -> No
     print("=" * 80)
 
 
+def _json_safe(value):
+    """Return a JSON-serializable variant of ``value`` (handles torch types)."""
+    if isinstance(value, torch.dtype):
+        return str(value)
+    if isinstance(value, torch.device):
+        return str(value)
+    if isinstance(value, (int, float, str, bool)) or value is None:
+        return value
+    return str(value)
+
+
 def save_training_config(config, filename: str = 'config.json') -> None:
-    """Dump the training config to JSON in ``checkpoint_dir``."""
+    """Dump the training config to JSON in ``checkpoint_dir``.
+
+    ``torch.dtype`` / ``torch.device`` values are written as strings so the
+    file stays plain-JSON serializable.
+    """
     config_path = os.path.join(config.checkpoint_dir, filename)
+    payload = {k: _json_safe(v) for k, v in config.to_dict().items()}
     with open(config_path, 'w') as f:
-        json.dump(config.to_dict(), f, indent=2)
+        json.dump(payload, f, indent=2)
     print(f"Configuration saved to {config_path}")
 
 
@@ -168,6 +184,11 @@ def load_training_config(config, filename: str = 'config.json') -> Any:
     if os.path.exists(config_path):
         with open(config_path, 'r') as f:
             config_dict = json.load(f)
+        # restore torch types that were saved as strings
+        if 'dtype' in config_dict and isinstance(config_dict['dtype'], str):
+            config_dict['dtype'] = getattr(torch, config_dict['dtype'].split('.')[-1], config_dict['dtype'])
+        if 'device' in config_dict and isinstance(config_dict['device'], str):
+            config_dict['device'] = torch.device(config_dict['device'])
         return type(config).from_dict(config_dict)
     return None
 
