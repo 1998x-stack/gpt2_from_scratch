@@ -1,6 +1,7 @@
-"""
-GPT-2 Configuration
-参考nanoGPT风格的配置文件
+"""GPT-2 configuration.
+
+Holds model architecture, training, and system settings, plus a registry of
+predefined GPT-2 model sizes. 配置文件：模型结构 / 训练超参 / 数据集路径等。
 """
 import torch
 
@@ -51,15 +52,15 @@ class GPT2Config:
     log_dir = './runs'
     
     @classmethod
-    def from_dict(cls, config_dict):
-        """从字典创建配置"""
+    def from_dict(cls, config_dict: dict) -> "GPT2Config":
+        """Create a config from a dict, overriding default attributes."""
         config = cls()
         for k, v in config_dict.items():
             setattr(config, k, v)
         return config
-    
-    def to_dict(self):
-        """转换为字典"""
+
+    def to_dict(self) -> dict:
+        """Return the config's attributes as a dict (excluding private keys)."""
         return {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
 
 
