@@ -45,6 +45,9 @@ __pycache__/
 .venv/
 venv/
 
+# Worktrees
+.worktrees/
+
 # Training artifacts
 data/
 raw_data/
