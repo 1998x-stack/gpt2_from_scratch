@@ -16,9 +16,8 @@ venv/
 data/
 raw_data/
 temp_data/
-checkpoints/
-checkpoints_mini/
-runs/
+checkpoints*/
+runs*/
 
 # IDE
 .idea/
