@@ -1,0 +1,12 @@
+# Progress Ledger — enhance-codes-and-docs
+- Task 1: complete (commits cc6b7ce..48feea8, hygiene files verified)
+- Task 2: complete (commits 48feea8..878da56, utils.py cleaned + verified)
+- Task 3: complete (3831d18, data.py)
+- Task 4: complete (b33cb09, model.py type hints + docstrings)
+- Task 5: complete (d7bfacc, config.py)
+- Task 6: complete (227919e, tokenizer.py SimpleBPETokenizer cleanup)
+- Task 7: complete (3a985e4, simple_tokenizer.py docstring)
+- Task 8: complete (5d98443, entry scripts tidied)
+- Task 9: complete (test_components.py, 8/8 passing on CPU)
+- Task 10: complete (test_correctness.py, 4/4 passing; fixed wrong test assertion, impl correct)
+- Task 11: complete (test_end_to_end.py, 1/1 passing on CPU in <1s)

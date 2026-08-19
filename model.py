@@ -7,7 +7,7 @@ from __future__ import annotations
 import math
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn import functional as F
 
 
@@ -115,13 +115,13 @@ class GPT2(nn.Module):
         super().__init__()
         self.config = config
         
-        self.transformer = nn.ModuleDict(dict(
-            wte=nn.Embedding(config.vocab_size, config.n_embd),
-            wpe=nn.Embedding(config.block_size, config.n_embd),
-            drop=nn.Dropout(config.dropout),
-            h=nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
-            ln_f=LayerNorm(config.n_embd, bias=config.bias),
-        ))
+        self.transformer = nn.ModuleDict({
+            'wte': nn.Embedding(config.vocab_size, config.n_embd),
+            'wpe': nn.Embedding(config.block_size, config.n_embd),
+            'drop': nn.Dropout(config.dropout),
+            'h': nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
+            'ln_f': LayerNorm(config.n_embd, bias=config.bias),
+        })
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
         
         # Weight sharing between embedding and output layer
@@ -150,7 +150,7 @@ class GPT2(nn.Module):
         ``loss=None`` (used for inference).
         """
         device = idx.device
-        b, t = idx.size()
+        _, t = idx.size()
         assert t <= self.config.block_size, f"Cannot forward sequence of length {t}, block size is {self.config.block_size}"
         
         # Token and position embeddings
@@ -233,8 +233,8 @@ class GPT2(nn.Module):
         
         param_dict = {pn: p for pn, p in self.named_parameters()}
         optim_groups = [
-            {'params': [param_dict[pn] for pn in sorted(list(decay))], 'weight_decay': weight_decay},
-            {'params': [param_dict[pn] for pn in sorted(list(no_decay))], 'weight_decay': 0.0},
+            {'params': [param_dict[pn] for pn in sorted(decay)], 'weight_decay': weight_decay},
+            {'params': [param_dict[pn] for pn in sorted(no_decay)], 'weight_decay': 0.0},
         ]
         
         # Use fused AdamW if available (faster)

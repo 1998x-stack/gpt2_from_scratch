@@ -3,12 +3,14 @@ Quickstart Example
 快速开始使用 GPT-2 训练和生成
 """
 import os
+
 import torch
+
 from config import GPT2Config
+from data import DataProcessor, create_dataloader, prepare_shakespeare_data
 from model import GPT2
 from tokenizer import get_tokenizer
-from data import prepare_shakespeare_data, DataProcessor, create_dataloader
-from utils import save_checkpoint, print_training_info
+from utils import print_training_info, save_checkpoint
 
 
 def minimal_training_example() -> None:
@@ -84,7 +86,7 @@ def minimal_training_example() -> None:
         X, Y = train_loader.get_batch()
         
         # 前向传播
-        logits, loss = model(X, Y)
+        _, loss = model(X, Y)
         
         # 反向传播
         optimizer.zero_grad()
@@ -148,7 +150,7 @@ def test_model_components() -> None:
     y = torch.randint(0, config.vocab_size, (batch_size, seq_len), device=device)
     
     logits, loss = model(x, y)
-    print(f"   ✓ Forward pass successful")
+    print("   ✓ Forward pass successful")
     print(f"   ✓ Logits shape: {logits.shape}")
     print(f"   ✓ Loss: {loss.item():.4f}")
     
@@ -157,7 +159,7 @@ def test_model_components() -> None:
     model.eval()
     with torch.no_grad():
         generated = model.generate(x[:1, :10], max_new_tokens=20)
-    print(f"   ✓ Generation successful")
+    print("   ✓ Generation successful")
     print(f"   ✓ Generated shape: {generated.shape}")
     
     # 测试 tokenizer

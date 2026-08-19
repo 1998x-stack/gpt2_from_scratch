@@ -2,10 +2,11 @@
 Data Preparation Script
 准备训练数据
 """
-import os
 import argparse
-from tokenizer import get_tokenizer
+import os
+
 from data import DataProcessor, prepare_shakespeare_data
+from tokenizer import get_tokenizer
 
 
 def prepare_shakespeare(output_dir: str = './data/shakespeare') -> None:
@@ -159,7 +160,7 @@ def main() -> None:
         prepare_custom_data(args.input, output_dir, args.tokenizer)
     
     print("\nData preparation completed!")
-    print(f"You can now train the model with: python train.py")
+    print("You can now train the model with: python train.py")
 
 
 if __name__ == '__main__':

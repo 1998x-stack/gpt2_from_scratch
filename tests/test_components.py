@@ -1,11 +1,11 @@
 """Component / smoke tests: config, model, tokenizers, LR schedule, checkpoints."""
-import torch
 import pytest
+import torch
 
-from config import GPT2Config, GPT2_CONFIGS
+from config import GPT2_CONFIGS, GPT2Config
 from model import GPT2
 from tokenizer import CharTokenizer, SimpleBPETokenizer, get_tokenizer
-from utils import get_lr, save_checkpoint, load_checkpoint
+from utils import get_lr, load_checkpoint, save_checkpoint
 
 
 def make_tiny_config():

@@ -5,6 +5,7 @@ predefined GPT-2 model sizes. 配置文件：模型结构 / 训练超参 / 数�
 """
 import torch
 
+
 class GPT2Config:
     # Model architecture
     vocab_size = 50257  # GPT-2 vocab size
@@ -66,8 +67,8 @@ class GPT2Config:
 
 # GPT-2 模型变体配置
 GPT2_CONFIGS = {
-    'gpt2': dict(n_layer=12, n_head=12, n_embd=768),        # 124M params
-    'gpt2-medium': dict(n_layer=24, n_head=16, n_embd=1024), # 350M params
-    'gpt2-large': dict(n_layer=36, n_head=20, n_embd=1280),  # 774M params
-    'gpt2-xl': dict(n_layer=48, n_head=25, n_embd=1600),     # 1558M params
+    'gpt2': {'n_layer': 12, 'n_head': 12, 'n_embd': 768},        # 124M params
+    'gpt2-medium': {'n_layer': 24, 'n_head': 16, 'n_embd': 1024},  # 350M params
+    'gpt2-large': {'n_layer': 36, 'n_head': 20, 'n_embd': 1280},   # 774M params
+    'gpt2-xl': {'n_layer': 48, 'n_head': 25, 'n_embd': 1600},      # 1558M params
 }

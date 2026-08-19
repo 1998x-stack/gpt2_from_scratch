@@ -2,8 +2,8 @@
 import torch
 
 from config import GPT2Config
-from model import GPT2
 from data import DataProcessor
+from model import GPT2
 from tokenizer import CharTokenizer
 
 

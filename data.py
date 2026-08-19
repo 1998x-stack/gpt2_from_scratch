@@ -7,7 +7,6 @@ provides a nanoGPT-style memory-mapped :class:`DataLoaderWrapper`.
 from __future__ import annotations
 
 import os
-from typing import Tuple
 
 import numpy as np
 import torch
@@ -38,7 +37,7 @@ class DataLoaderWrapper:
         data_path = os.path.join(data_dir, f'{split}.bin')
         self.data = np.memmap(data_path, dtype=np.uint16, mode='r')
 
-    def get_batch(self) -> Tuple[torch.Tensor, torch.Tensor]:
+    def get_batch(self) -> tuple[torch.Tensor, torch.Tensor]:
         """Sample one batch of (inputs, targets) of ``batch_size x block_size``."""
         ix = torch.randint(len(self.data) - self.block_size, (self.batch_size,))
         x = torch.stack(
@@ -90,7 +89,7 @@ class DataProcessor:
         print(f"Saved {len(tokens)} tokens to {output_path}")
         return len(tokens)
 
-    def process_directory(self, input_dir: str, output_dir: str, train_ratio: float = 0.9) -> Tuple[int, int]:
+    def process_directory(self, input_dir: str, output_dir: str, train_ratio: float = 0.9) -> tuple[int, int]:
         """Tokenize all ``.txt`` files in ``input_dir`` into train/val ``.bin`` files.
 
         Returns:
@@ -149,8 +148,7 @@ def download_openwebtext(data_dir: str) -> None:
     def save_split(split, fname):
         fpath = os.path.join(data_dir, fname)
         with open(fpath, 'w', encoding='utf-8') as f:
-            for example in split:
-                f.write(example['text'] + '\n')
+            f.writelines(example['text'] + '\n' for example in split)
         print(f"Saved {len(split)} examples to {fpath}")
 
     os.makedirs(data_dir, exist_ok=True)
@@ -158,7 +156,7 @@ def download_openwebtext(data_dir: str) -> None:
     save_split(split_dataset['val'], 'val.txt')
 
 
-def prepare_shakespeare_data(data_dir: str) -> Tuple[str, str]:
+def prepare_shakespeare_data(data_dir: str) -> tuple[str, str]:
     """Download the tiny Shakespeare dataset and split it into train/val texts."""
     import urllib.request
 
@@ -195,7 +193,7 @@ def estimate_loss(model, train_loader, val_loader, eval_iters: int, device) -> d
         for k in range(eval_iters):
             X, Y = loader.get_batch()
             with torch.no_grad():
-                logits, loss = model(X, Y)
+                _, loss = model(X, Y)
             losses[k] = loss.item()
         out[split] = losses.mean()
 

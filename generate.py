@@ -3,6 +3,7 @@ Text Generation Script
 使用训练好的模型生成文本
 """
 import torch
+
 from config import GPT2Config
 from model import GPT2
 from tokenizer import get_tokenizer
@@ -105,7 +106,7 @@ def interactive_mode(checkpoint_path: str = './checkpoints/best_checkpoint.pt') 
                 break
             
             if prompt.lower() == 'params':
-                print(f"\nCurrent parameters:")
+                print("\nCurrent parameters:")
                 print(f"  temperature: {temperature}")
                 print(f"  top_k: {top_k}")
                 print(f"  max_new_tokens: {max_new_tokens}")
@@ -123,7 +124,7 @@ def interactive_mode(checkpoint_path: str = './checkpoints/best_checkpoint.pt') 
                     if tokens_input:
                         max_new_tokens = int(tokens_input)
                     
-                    print(f"\nUpdated parameters:")
+                    print("\nUpdated parameters:")
                     print(f"  temperature: {temperature}")
                     print(f"  top_k: {top_k}")
                     print(f"  max_new_tokens: {max_new_tokens}")
@@ -157,7 +158,7 @@ def interactive_mode(checkpoint_path: str = './checkpoints/best_checkpoint.pt') 
         except KeyboardInterrupt:
             print("\n\nInterrupted. Goodbye!")
             break
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - REPL loops on any user-input error
             print(f"Error: {e}")
 
 

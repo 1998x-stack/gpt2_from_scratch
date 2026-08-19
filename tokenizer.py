@@ -2,9 +2,7 @@
 Simple Tokenizer for GPT-2
 使用字符级或简单的BPE tokenization
 """
-import os
 import pickle
-import regex as re
 from collections import Counter
 
 
@@ -16,7 +14,7 @@ class CharTokenizer:
     
     def train(self, text):
         """从文本训练tokenizer"""
-        chars = sorted(list(set(text)))
+        chars = sorted(set(text))
         self.vocab = {ch: i for i, ch in enumerate(chars)}
         self.inverse_vocab = {i: ch for i, ch in enumerate(chars)}
     
@@ -56,7 +54,8 @@ class SimpleBPETokenizer:
     def get_stats(self, ids):
         """统计相邻token对的频率"""
         counts = Counter()
-        for pair in zip(ids[:-1], ids[1:]):
+        # zip(ids[:-1], ids[1:]) == itertools.pairwise but works on Python 3.9
+        for pair in zip(ids[:-1], ids[1:]):  # noqa: RUF007 - 3.9-compatible pairwise
             counts[pair] += 1
         return counts
     

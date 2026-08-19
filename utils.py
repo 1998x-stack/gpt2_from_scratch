@@ -141,7 +141,7 @@ def print_training_info(config, model, train_tokens: int, val_tokens: int) -> No
     print("=" * 80)
     print("Training Configuration:")
     print("=" * 80)
-    print(f"Model: GPT-2")
+    print("Model: GPT-2")
     print(f"Parameters: {format_number(model.get_num_params())}")
     print(f"Vocab size: {config.vocab_size}")
     print(f"Block size: {config.block_size}")

@@ -4,17 +4,23 @@ Training Script for GPT-2
 """
 import os
 import time
+
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from config import GPT2Config
-from model import GPT2
 from data import create_dataloader, estimate_loss
+from model import GPT2
 from utils import (
-    get_lr, save_checkpoint, load_checkpoint, 
-    print_training_info, setup_logging, 
-    get_device_context, clip_gradients, set_seed,
-    save_training_config
+    clip_gradients,
+    get_device_context,
+    get_lr,
+    load_checkpoint,
+    print_training_info,
+    save_checkpoint,
+    save_training_config,
+    set_seed,
+    setup_logging,
 )
 
 
@@ -49,7 +55,6 @@ def train() -> None:
     model.to(device)
     
     # Print model info
-    n_params = model.get_num_params()
     print_training_info(
         config, model, 
         len(train_loader.data), 
@@ -123,7 +128,7 @@ def train() -> None:
         # Forward pass with mixed precision
         ctx = get_device_context(device_type, config.dtype)
         with ctx:
-            logits, loss = model(X, Y)
+            _, loss = model(X, Y)
         
         # Backward pass
         optimizer.zero_grad(set_to_none=True)

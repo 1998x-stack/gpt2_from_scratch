@@ -2,9 +2,9 @@
 import torch
 
 from config import GPT2Config
+from data import DataProcessor, create_dataloader
 from model import GPT2
 from tokenizer import CharTokenizer
-from data import DataProcessor, create_dataloader
 
 
 def test_mini_training(tmp_path):
