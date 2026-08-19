@@ -6,6 +6,13 @@ predefined GPT-2 model sizes. 配置文件：模型结构 / 训练超参 / 数�
 import torch
 
 
+def _is_data_attr(v) -> bool:
+    """True if ``v`` is a config field value (not a method/classmethod)."""
+    from types import FunctionType
+
+    return not callable(v) and not isinstance(v, (FunctionType, classmethod, staticmethod))
+
+
 class GPT2Config:
     # Model architecture
     vocab_size = 50257  # GPT-2 vocab size
@@ -48,10 +55,21 @@ class GPT2Config:
     # Data
     data_dir = './data'
     dataset = 'openwebtext'
-    
+
     # Tensorboard
     log_dir = './runs'
-    
+
+    def __init__(self) -> None:
+        """Snapshot class-level defaults onto the instance.
+
+        This makes :meth:`to_dict` / :meth:`from_dict` round-trip correctly
+        (they read ``instance.__dict__``), so a checkpoint's config is saved
+        even when the model is driven purely by class attributes.
+        """
+        for k, v in self.__class__.__dict__.items():
+            if not k.startswith('_') and _is_data_attr(v):
+                setattr(self, k, v)
+
     @classmethod
     def from_dict(cls, config_dict: dict) -> "GPT2Config":
         """Create a config from a dict, overriding default attributes."""

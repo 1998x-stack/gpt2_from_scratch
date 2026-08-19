@@ -22,6 +22,17 @@ def test_config_presets():
     assert GPT2_CONFIGS['gpt2'] == {'n_layer': 12, 'n_head': 12, 'n_embd': 768}
 
 
+def test_config_dict_roundtrip():
+    """Class-attribute defaults must survive to_dict/from_dict (checkpoint config)."""
+    cfg = GPT2Config()
+    d = cfg.to_dict()
+    assert d['vocab_size'] == 50257  # a class-level default is captured
+    cfg.n_layer = 3
+    restored = GPT2Config.from_dict(cfg.to_dict())
+    assert restored.n_layer == 3
+    assert restored.block_size == 1024
+
+
 def test_forward_pass_shape():
     cfg = make_tiny_config()
     model = GPT2(cfg)
