@@ -1,36 +1,42 @@
+"""Utility functions: checkpointing, LR scheduling, logging, seeding, device context.
+
+Docstrings use concise English with a Chinese usage note where it aids the
+learning goal. 本模块是训练流程的工具层（checkpoint / 学习率 / 日志等）。
 """
-Utility Functions
-包含checkpoint保存/加载、学习率调度等工具函数
-"""
-import os
-import torch
+from __future__ import annotations
+
 import json
+import os
+import random
 from contextlib import nullcontext
+from typing import Any
+
+import numpy as np
+import torch
 
 
-def get_lr(it, config):
+def get_lr(it: int, config) -> float:
+    """Return the learning rate at iteration ``it`` (linear warmup + cosine decay).
+
+    参考 nanoGPT 的学习率调度：线性 warmup -> cosine decay -> min_lr。
     """
-    学习率调度：warmup + cosine decay
-    参考nanoGPT的实现
-    """
-    # 1) Linear warmup
     if it < config.warmup_iters:
         return config.learning_rate * it / config.warmup_iters
-    # 2) If it > lr_decay_iters, return min learning rate
     if it > config.lr_decay_iters:
         return config.min_lr
-    # 3) Cosine decay
-    decay_ratio = (it - config.warmup_iters) / (config.lr_decay_iters - config.warmup_iters)
+    decay_ratio = (it - config.warmup_iters) / (
+        config.lr_decay_iters - config.warmup_iters
+    )
     assert 0 <= decay_ratio <= 1
     coeff = 0.5 * (1.0 + torch.cos(torch.tensor(decay_ratio * torch.pi)))
     return config.min_lr + coeff * (config.learning_rate - config.min_lr)
 
 
-def save_checkpoint(model, optimizer, iter_num, best_val_loss, config, filename='checkpoint.pt'):
-    """保存checkpoint"""
+def save_checkpoint(model, optimizer, iter_num: int, best_val_loss: float, config, filename: str = 'checkpoint.pt') -> None:
+    """Save a training checkpoint (model weights + optimizer state + config)."""
     checkpoint_dir = config.checkpoint_dir
     os.makedirs(checkpoint_dir, exist_ok=True)
-    
+
     checkpoint = {
         'model': model.state_dict(),
         'optimizer': optimizer.state_dict(),
@@ -38,105 +44,100 @@ def save_checkpoint(model, optimizer, iter_num, best_val_loss, config, filename=
         'best_val_loss': best_val_loss,
         'config': config.to_dict(),
     }
-    
+
     checkpoint_path = os.path.join(checkpoint_dir, filename)
     print(f"Saving checkpoint to {checkpoint_path}")
     torch.save(checkpoint, checkpoint_path)
 
 
-def load_checkpoint(model, optimizer, config, filename='checkpoint.pt'):
-    """加载checkpoint"""
+def load_checkpoint(model, optimizer, config, filename: str = 'checkpoint.pt') -> tuple[int, float]:
+    """Load a checkpoint into ``model`` and ``optimizer``.
+
+    Returns:
+        (iter_num, best_val_loss) restored from the checkpoint. If no
+        checkpoint exists, returns ``(0, float('inf'))``.
+    """
     checkpoint_path = os.path.join(config.checkpoint_dir, filename)
-    
+
     if not os.path.exists(checkpoint_path):
         print(f"No checkpoint found at {checkpoint_path}")
         return 0, float('inf')
-    
+
     print(f"Loading checkpoint from {checkpoint_path}")
     checkpoint = torch.load(checkpoint_path, map_location=config.device)
-    
+
     model.load_state_dict(checkpoint['model'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     iter_num = checkpoint['iter_num']
     best_val_loss = checkpoint['best_val_loss']
-    
+
     return iter_num, best_val_loss
 
 
-def save_model_only(model, config, filename='model.pt'):
-    """只保存模型权重（不包括optimizer）"""
+def save_model_only(model, config, filename: str = 'model.pt') -> None:
+    """Save only model weights (no optimizer state) to ``checkpoint_dir``."""
     checkpoint_dir = config.checkpoint_dir
     os.makedirs(checkpoint_dir, exist_ok=True)
-    
+
     model_path = os.path.join(checkpoint_dir, filename)
     print(f"Saving model to {model_path}")
     torch.save(model.state_dict(), model_path)
 
 
-def count_parameters(model):
-    """统计模型参数量"""
+def count_parameters(model) -> int:
+    """Return the total number of trainable parameters in ``model``."""
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def format_number(num):
-    """格式化大数字（如参数量）"""
+def format_number(num: int) -> str:
+    """Format a large integer with K/M/B suffixes (e.g. 1.23M)."""
     if num >= 1e9:
-        return f"{num/1e9:.2f}B"
+        return f"{num / 1e9:.2f}B"
     elif num >= 1e6:
-        return f"{num/1e6:.2f}M"
+        return f"{num / 1e6:.2f}M"
     elif num >= 1e3:
-        return f"{num/1e3:.2f}K"
+        return f"{num / 1e3:.2f}K"
     else:
         return str(num)
 
 
 class AverageMeter:
-    """计算和存储平均值"""
-    def __init__(self):
+    """Track a running average of observed values."""
+
+    def __init__(self) -> None:
         self.reset()
-    
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
+
+    def reset(self) -> None:
+        self.val = 0.0
+        self.avg = 0.0
+        self.sum = 0.0
         self.count = 0
-    
-    def update(self, val, n=1):
+
+    def update(self, val: float, n: int = 1) -> None:
         self.val = val
         self.sum += val * n
         self.count += n
-        self.avg = self.sum / self.count
+        self.avg = self.sum / self.count if self.count else 0.0
 
 
-def get_batch_info(tokens, block_size):
-    """获取batch的统计信息"""
-    info = {
-        'num_tokens': len(tokens),
-        'num_batches': len(tokens) // block_size,
-        'size_mb': len(tokens) * 2 / 1024 / 1024,  # uint16 = 2 bytes
-    }
-    return info
-
-
-def setup_logging(config):
-    """设置日志目录"""
+def setup_logging(config) -> None:
+    """Create the log and checkpoint directories if missing."""
     os.makedirs(config.log_dir, exist_ok=True)
     os.makedirs(config.checkpoint_dir, exist_ok=True)
 
 
-def get_device_context(device_type, dtype):
-    """
-    获取设备上下文管理器
-    用于混合精度训练
+def get_device_context(device_type: str, dtype) -> Any:
+    """Return a context manager suitable for mixed-precision training.
+
+    On CUDA returns ``torch.amp.autocast``; on CPU returns a null context.
     """
     if device_type == 'cuda':
         return torch.amp.autocast(device_type=device_type, dtype=dtype)
-    else:
-        return nullcontext()
+    return nullcontext()
 
 
-def print_training_info(config, model, train_tokens, val_tokens):
-    """打印训练信息"""
+def print_training_info(config, model, train_tokens: int, val_tokens: int) -> None:
+    """Print a formatted summary of the training configuration."""
     print("=" * 80)
     print("Training Configuration:")
     print("=" * 80)
@@ -153,16 +154,16 @@ def print_training_info(config, model, train_tokens, val_tokens):
     print("=" * 80)
 
 
-def save_training_config(config, filename='config.json'):
-    """保存训练配置为JSON"""
+def save_training_config(config, filename: str = 'config.json') -> None:
+    """Dump the training config to JSON in ``checkpoint_dir``."""
     config_path = os.path.join(config.checkpoint_dir, filename)
     with open(config_path, 'w') as f:
         json.dump(config.to_dict(), f, indent=2)
     print(f"Configuration saved to {config_path}")
 
 
-def load_training_config(config, filename='config.json'):
-    """从JSON加载训练配置"""
+def load_training_config(config, filename: str = 'config.json') -> Any:
+    """Load a config from JSON in ``checkpoint_dir``; returns None if absent."""
     config_path = os.path.join(config.checkpoint_dir, filename)
     if os.path.exists(config_path):
         with open(config_path, 'r') as f:
@@ -171,42 +172,14 @@ def load_training_config(config, filename='config.json'):
     return None
 
 
-class GradScaler:
-    """
-    简单的梯度缩放器
-    用于混合精度训练
-    """
-    def __init__(self, enabled=True):
-        self.enabled = enabled
-        self._scale = 2.0 ** 16
-        
-    def scale(self, loss):
-        if self.enabled:
-            return loss * self._scale
-        return loss
-    
-    def step(self, optimizer):
-        if self.enabled:
-            for param_group in optimizer.param_groups:
-                for param in param_group['params']:
-                    if param.grad is not None:
-                        param.grad.data.div_(self._scale)
-        optimizer.step()
-    
-    def update(self):
-        pass  # 简化版本，不动态调整scale
-
-
-def clip_gradients(model, max_norm):
-    """梯度裁剪"""
+def clip_gradients(model, max_norm: float) -> None:
+    """Clip all gradients to a maximum L2 norm."""
     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
 
 
-def set_seed(seed):
-    """设置随机种子"""
+def set_seed(seed: int) -> None:
+    """Seed PyTorch, NumPy and Python's random for reproducibility."""
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    import numpy as np
-    import random
     np.random.seed(seed)
     random.seed(seed)
