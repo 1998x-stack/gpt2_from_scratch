@@ -51,6 +51,16 @@ def test_backward_runs():
     assert all(p.grad is not None for p in model.parameters() if p.requires_grad)
 
 
+def test_configure_optimizers_covers_all_unique_params():
+    """Weight-tied params (wte.weight == lm_head.weight) must be optimized once."""
+    cfg = make_tiny_config()
+    model = GPT2(cfg)
+    opt = model.configure_optimizers(0.1, 6e-4, (0.9, 0.95), 'cpu')
+    covered = sum(len(g['params']) for g in opt.param_groups)
+    unique = len(set(model.named_parameters()))  # dedup count
+    assert covered == unique
+
+
 def test_char_tokenizer_roundtrip():
     tok = CharTokenizer()
     tok.train("hello world")

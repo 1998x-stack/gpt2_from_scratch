@@ -232,6 +232,11 @@ class GPT2(nn.Module):
                     no_decay.add(fpn)
         
         param_dict = {pn: p for pn, p in self.named_parameters()}
+        # ``named_parameters`` dedupes weight-tied params (wte.weight is
+        # lm_head.weight), so names built from ``named_modules`` may not exist
+        # here. Keep only the names that map to a unique trainable tensor.
+        decay &= param_dict.keys()
+        no_decay &= param_dict.keys()
         optim_groups = [
             {'params': [param_dict[pn] for pn in sorted(decay)], 'weight_decay': weight_decay},
             {'params': [param_dict[pn] for pn in sorted(no_decay)], 'weight_decay': 0.0},
