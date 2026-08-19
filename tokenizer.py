@@ -46,13 +46,13 @@ class CharTokenizer:
 
 
 class SimpleBPETokenizer:
-    """简化的BPE tokenizer (类似GPT-2)"""
-    def __init__(self, vocab_size=50257):
+    """A lightweight byte-level BPE tokenizer (similar to GPT-2)."""
+
+    def __init__(self, vocab_size: int = 50257) -> None:
         self.vocab_size = vocab_size
-        self.encoder = {}
-        self.decoder = {}
-        self.bpe_ranks = {}
-        
+        self.decoder: dict = {}        # token id -> bytes
+        self.bpe_ranks: dict = {}      # (byte_a, byte_b) -> merged id
+
     def get_stats(self, ids):
         """统计相邻token对的频率"""
         counts = Counter()
@@ -73,40 +73,43 @@ class SimpleBPETokenizer:
                 i += 1
         return newids
     
-    def train(self, text, num_merges=10000):
-        """训练BPE tokenizer"""
-        # 初始化：每个字节作为一个token
+    def train(self, text: str, num_merges: int = 10000) -> None:
+        """Train the tokenizer by merging the most frequent byte pairs."""
+        # 初始化：每个字节作为一个 token。
         tokens = list(text.encode('utf-8'))
         ids = list(tokens)
-        
-        # 基础vocab: 0-255 字节
+
+        # 基础 vocab: 0-255 字节
         vocab = {i: bytes([i]) for i in range(256)}
-        
-        # 迭代合并最频繁的pair
+
+        # 迭代合并最频繁的 pair
         merges = {}
         for i in range(num_merges):
             stats = self.get_stats(ids)
             if not stats:
                 break
-            
+
             pair = max(stats, key=stats.get)
             idx = 256 + i
             ids = self.merge(ids, pair, idx)
             merges[pair] = idx
             vocab[idx] = vocab[pair[0]] + vocab[pair[1]]
-            
+
             if (i + 1) % 1000 == 0:
                 print(f"Merge {i+1}/{num_merges}")
-        
-        # 构建编码器和解码器
-        self.encoder = {v: k for k, v in vocab.items()}
+
+        # 保留解码表和合并规则；编码时按 bpe_ranks 应用合并。
         self.decoder = vocab
         self.bpe_ranks = merges
-    
-    def encode(self, text):
-        """编码文本"""
+
+    def encode(self, text: str) -> list:
+        """Encode text into token ids via the trained BPE merges.
+
+        On an untrained tokenizer (no merge rules) this degrades gracefully
+        to returning the raw UTF-8 byte sequence.
+        """
         tokens = list(text.encode('utf-8'))
-        
+
         while len(tokens) >= 2:
             stats = self.get_stats(tokens)
             pair = min(stats, key=lambda p: self.bpe_ranks.get(p, float('inf')))
@@ -114,29 +117,27 @@ class SimpleBPETokenizer:
                 break
             idx = self.bpe_ranks[pair]
             tokens = self.merge(tokens, pair, idx)
-        
+
         return tokens
-    
-    def decode(self, tokens):
-        """解码tokens"""
+
+    def decode(self, tokens) -> str:
+        """Decode token ids back into text (invalid UTF-8 is replaced)."""
         bytes_list = [self.decoder[t] for t in tokens]
         text_bytes = b''.join(bytes_list)
         return text_bytes.decode('utf-8', errors='replace')
-    
-    def save(self, path):
-        """保存tokenizer"""
+
+    def save(self, path: str) -> None:
+        """Save the tokenizer to ``path``."""
         with open(path, 'wb') as f:
             pickle.dump({
-                'encoder': self.encoder,
                 'decoder': self.decoder,
                 'bpe_ranks': self.bpe_ranks
             }, f)
-    
-    def load(self, path):
-        """加载tokenizer"""
+
+    def load(self, path: str) -> None:
+        """Load a tokenizer from ``path``."""
         with open(path, 'rb') as f:
             data = pickle.load(f)
-            self.encoder = data['encoder']
             self.decoder = data['decoder']
             self.bpe_ranks = data['bpe_ranks']
 
