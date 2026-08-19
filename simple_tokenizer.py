@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-手写字节级BPE Tokenizer
+手写字节级BPE Tokenizer （教学演示 / educational demo）
+
+注意：本文件是教学演示，不参与 train/generate 流程。
+管线使用 tokenizer.py 中的 CharTokenizer / SimpleBPETokenizer / GPT2Tokenizer。
 
 这个实现展示了现代LLM tokenizer的核心机制：
 1. Unicode文本 -> UTF-8 bytes（字节序列）
