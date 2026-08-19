@@ -8,7 +8,7 @@ from tokenizer import get_tokenizer
 from data import DataProcessor, prepare_shakespeare_data
 
 
-def prepare_shakespeare(output_dir='./data/shakespeare'):
+def prepare_shakespeare(output_dir: str = './data/shakespeare') -> None:
     """准备莎士比亚数据集（用于快速测试）"""
     print("Preparing Shakespeare dataset...")
     
@@ -43,7 +43,7 @@ def prepare_shakespeare(output_dir='./data/shakespeare'):
     print(f"Shakespeare dataset prepared in {output_dir}")
 
 
-def prepare_custom_data(input_path, output_dir='./data/custom', tokenizer_type='gpt2'):
+def prepare_custom_data(input_path: str, output_dir: str = './data/custom', tokenizer_type: str = 'gpt2') -> None:
     """准备自定义数据集"""
     print(f"Preparing custom dataset from {input_path}")
     
@@ -102,7 +102,7 @@ def prepare_custom_data(input_path, output_dir='./data/custom', tokenizer_type='
     print(f"Custom dataset prepared in {output_dir}")
 
 
-def prepare_openwebtext(output_dir='./data/openwebtext'):
+def prepare_openwebtext(output_dir: str = './data/openwebtext') -> None:
     """准备OpenWebText数据集"""
     print("Preparing OpenWebText dataset...")
     
@@ -129,7 +129,7 @@ def prepare_openwebtext(output_dir='./data/openwebtext'):
     print(f"OpenWebText dataset prepared in {output_dir}")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description='Prepare data for GPT-2 training')
     parser.add_argument('--dataset', type=str, default='shakespeare',
                         choices=['shakespeare', 'openwebtext', 'custom'],

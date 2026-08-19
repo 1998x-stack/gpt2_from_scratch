@@ -11,7 +11,7 @@ from data import prepare_shakespeare_data, DataProcessor, create_dataloader
 from utils import save_checkpoint, print_training_info
 
 
-def minimal_training_example():
+def minimal_training_example() -> None:
     """
     最小化训练示例
     使用莎士比亚数据集进行快速演示
@@ -120,7 +120,7 @@ def minimal_training_example():
     print(f"Model saved to: {config.checkpoint_dir}/checkpoint.pt")
 
 
-def test_model_components():
+def test_model_components() -> None:
     """测试模型各个组件"""
     print("\n" + "=" * 80)
     print("Testing Model Components")

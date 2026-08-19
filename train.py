@@ -4,7 +4,6 @@ Training Script for GPT-2
 """
 import os
 import time
-import math
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -19,7 +18,7 @@ from utils import (
 )
 
 
-def train():
+def train() -> None:
     # ==================== Configuration ====================
     config = GPT2Config()
     

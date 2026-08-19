@@ -9,13 +9,13 @@ from tokenizer import get_tokenizer
 
 
 def generate_text(
-    prompt="Once upon a time",
-    max_new_tokens=100,
-    temperature=0.8,
-    top_k=200,
-    checkpoint_path='./checkpoints/best_checkpoint.pt',
-    device='cuda' if torch.cuda.is_available() else 'cpu'
-):
+    prompt: str = "Once upon a time",
+    max_new_tokens: int = 100,
+    temperature: float = 0.8,
+    top_k: int = 200,
+    checkpoint_path: str = './checkpoints/best_checkpoint.pt',
+    device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+) -> str:
     """
     生成文本
     
@@ -65,7 +65,7 @@ def generate_text(
     return generated_text
 
 
-def interactive_mode(checkpoint_path='./checkpoints/best_checkpoint.pt'):
+def interactive_mode(checkpoint_path: str = './checkpoints/best_checkpoint.pt') -> None:
     """交互式生成模式"""
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
@@ -163,11 +163,11 @@ def interactive_mode(checkpoint_path='./checkpoints/best_checkpoint.pt'):
 
 def batch_generate(
     prompts,
-    checkpoint_path='./checkpoints/best_checkpoint.pt',
-    output_file='generated_samples.txt',
-    max_new_tokens=100,
-    temperature=0.8,
-    top_k=200
+    checkpoint_path: str = './checkpoints/best_checkpoint.pt',
+    output_file: str = 'generated_samples.txt',
+    max_new_tokens: int = 100,
+    temperature: float = 0.8,
+    top_k: int = 200
 ):
     """批量生成文本"""
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
